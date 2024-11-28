@@ -4,8 +4,12 @@ import 'package:http/http.dart' as http;
 import 'player_detail_screen.dart';
 import 'dart:async';
 import 'profile_screen.dart';
+import 'heroes.dart'; // Import layar Heroes
+import 'custom_bottom_navigation.dart'; // Import BottomNavigationBar
 
 class MainMenuScreen extends StatefulWidget {
+  const MainMenuScreen({super.key});
+
   @override
   _MainMenuScreenState createState() => _MainMenuScreenState();
 }
@@ -14,7 +18,7 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   int _selectedIndex = 0;
   List<Map<String, dynamic>> _leaderboard = [];
   List<Map<String, dynamic>> _searchResults = [];
-  final String _apiKey = 'RGAPI-117e7b59-da0d-4b91-a0a4-d94560ac1003';
+  final String _apiKey = 'RGAPI-2556b860-05dc-4126-a9df-8438d6117f59';
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
 
@@ -47,7 +51,9 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
 
   Future<void> _fetchLeaderboard() async {
     final leaderboardUrl =
-        'https://sg2.api.riotgames.com/tft/league/v1/challenger?queue=RANKED_TFT';
+        'https://sg2.api.riotgames.com/tft/league/v1/master?queue=RANKED_TFT';
+
+    print('Fetching leaderboard from: $leaderboardUrl'); // Debug: URL
 
     final response = await http.get(
       Uri.parse(leaderboardUrl),
@@ -55,22 +61,38 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
 
     if (response.statusCode == 200) {
+      print('Successfully fetched leaderboard'); // Debug: Success
+
       final data = json.decode(response.body);
+      print('Decoded JSON data: $data'); // Debug: Response data
+
       final entries = data['entries'] as List<dynamic>;
+      print(
+          'Leaderboard entries: ${entries.length}'); // Debug: Number of entries
 
       List<Map<String, dynamic>> players = [];
 
       for (var entry in entries) {
+        print('Processing entry: $entry'); // Debug: Each entry
+
         final summonerId = entry['summonerId'];
         final rankInfo = {
           'rank': entry['rank'],
           'leaguePoints': entry['leaguePoints'],
           'summonerId': summonerId,
         };
+        print('Rank info: $rankInfo'); // Debug: Rank info
+
         final playerData =
             await _fetchSummonerGameNameAndPuuid(summonerId, rankInfo);
+        print('Player data: $playerData'); // Debug: Player data
+
         if (playerData != null) {
           players.add(playerData);
+          print('Added player: $playerData'); // Debug: Added player
+        } else {
+          print(
+              'Player data is null for summonerId: $summonerId'); // Debug: Null player data
         }
       }
 
@@ -78,9 +100,12 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
         setState(() {
           _leaderboard = players;
         });
+        print(
+            'Leaderboard updated with ${players.length} players'); // Debug: Final player list
       }
     } else {
-      print('Failed to fetch leaderboard');
+      print(
+          'Failed to fetch leaderboard, status code: ${response.statusCode}'); // Debug: Failure case
     }
   }
 
@@ -270,21 +295,39 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     );
   }
 
+  Widget _buildLeaderboard() {
+    if (_leaderboard.isEmpty) {
+      return Expanded(child: Center(child: CircularProgressIndicator()));
+    }
+
+    return Expanded(
+      child: ListView.builder(
+        itemCount: _leaderboard.length,
+        itemBuilder: (context, index) {
+          final player = _leaderboard[index];
+
+          return ListTile(
+            title: Text(player['gameName'] ?? 'Unknown Player'),
+            subtitle: Text(
+                'Rank: ${player['rank']} - League Points: ${player['leaguePoints']}'),
+            onTap: () {
+              // Handle tap event for leaderboard item
+            },
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _selectedIndex == 0 ? _buildMainMenu() : ProfileScreen(),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Main Menu',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+      body: _selectedIndex == 0
+          ? _buildMainMenu()
+          : _selectedIndex == 1
+              ? HeroesScreen()
+              : ProfileScreen(),
+      bottomNavigationBar: CustomBottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),

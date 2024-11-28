@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'app_styles.dart'; // Import file styles
 
 class PlayerDetailScreen extends StatelessWidget {
   final String puuid;
@@ -8,25 +9,42 @@ class PlayerDetailScreen extends StatelessWidget {
   final String tagLine;
 
   const PlayerDetailScreen({
-    Key? key,
+    super.key,
     required this.puuid,
     required this.gameName,
     required this.tagLine,
     required List<Map<String, dynamic>> ranks,
-  }) : super(key: key);
+  });
 
-  final String _apiKey = 'RGAPI-117e7b59-da0d-4b91-a0a4-d94560ac1003';
+  final String _apiKey = 'RGAPI-2556b860-05dc-4126-a9df-8438d6117f59';
 
   // Cache for trait and rank data
   static Map<String, String> _traitIconDataCache = {};
   static Map<String, Map<String, String>> _rankIconDataCache = {};
+
+  // Fetch details for a specific match
+  Future<Map<String, dynamic>> _fetchMatchDetails(String matchId) async {
+    final matchDetailsUrl =
+        'https://sea.api.riotgames.com/tft/match/v1/matches/$matchId';
+
+    final response = await http.get(
+      Uri.parse(matchDetailsUrl),
+      headers: {'X-Riot-Token': _apiKey},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      return {};
+    }
+  }
 
   // Fetch trait icon data
   Future<void> _fetchTraitIconData() async {
     if (_traitIconDataCache.isNotEmpty) return;
 
     final traitDataUrl =
-        'https://ddragon.leagueoflegends.com/cdn/14.21.1/data/en_SG/tft-trait.json';
+        'https://ddragon.leagueoflegends.com/cdn/14.23.1/data/en_SG/tft-trait.json';
     final response = await http.get(Uri.parse(traitDataUrl));
 
     if (response.statusCode == 200) {
@@ -47,7 +65,7 @@ class PlayerDetailScreen extends StatelessWidget {
     if (_rankIconDataCache.isNotEmpty) return;
 
     final rankDataUrl =
-        'https://ddragon.leagueoflegends.com/cdn/14.21.1/data/en_SG/tft-regalia.json';
+        'https://ddragon.leagueoflegends.com/cdn/14.23.1/data/en_SG/tft-regalia.json';
     final response = await http.get(Uri.parse(rankDataUrl));
 
     if (response.statusCode == 200) {
@@ -70,9 +88,9 @@ class PlayerDetailScreen extends StatelessWidget {
   // Get trait icon URL from cache
   String _getTraitIconUrl(String traitName) {
     if (_traitIconDataCache.containsKey(traitName)) {
-      return 'https://ddragon.leagueoflegends.com/cdn/14.21.1/img/tft-trait/${_traitIconDataCache[traitName]}';
+      return 'https://ddragon.leagueoflegends.com/cdn/14.23.1/img/tft-trait/${_traitIconDataCache[traitName]}';
     }
-    return 'https://ddragon.leagueoflegends.com/cdn/14.21.1/img/tft-trait/default.png';
+    return 'https://ddragon.leagueoflegends.com/cdn/14.23.1/img/tft-trait/default.png';
   }
 
   // Get rank icon URL based on rank type and tier
@@ -84,34 +102,34 @@ class PlayerDetailScreen extends StatelessWidget {
       iconFileName = 'TFT_Regalia_${tier.capitalize()}.png';
     }
 
-    return 'https://ddragon.leagueoflegends.com/cdn/14.21.1/img/tft-regalia/$iconFileName';
+    return 'https://ddragon.leagueoflegends.com/cdn/14.23.1/img/tft-regalia/$iconFileName';
   }
 
-// Dynamically construct champion icon URL
+  // Dynamically construct champion icon URL
   String _getChampionIconUrl(String championId) {
-    // Check if the champion ID starts with "TFT12_" for TFT Set 12
-    if (championId.startsWith("TFT12_")) {
-      return 'https://ddragon.leagueoflegends.com/cdn/14.22.1/img/tft-champion/${championId}.TFT_Set12.png';
+    if (championId.startsWith("TFT13_")) {
+      return 'https://ddragon.leagueoflegends.com/cdn/14.23.1/img/tft-champion/$championId.TFT_Set13.png';
     }
-    // Otherwise, assume it's from TFT Set 5 or other sets without the suffix
-    return 'https://ddragon.leagueoflegends.com/cdn/14.22.1/img/tft-champion/${championId}.png';
+    return 'https://ddragon.leagueoflegends.com/cdn/14.23.1/img/tft-champion/$championId.png';
   }
 
-  // Fetch the summoner ID using puuid
-  Future<String> _fetchSummonerId() async {
-    final summonerIdUrl =
-        'https://sg2.api.riotgames.com/tft/summoner/v1/summoners/by-puuid/$puuid';
-
-    final response = await http.get(
-      Uri.parse(summonerIdUrl),
-      headers: {'X-Riot-Token': _apiKey},
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['id'];
-    } else {
-      throw Exception('Failed to fetch summoner ID');
+  // Get border color based on tier
+  Color _getBorderColor(dynamic tier) {
+    // Ensure the tier is treated as an integer
+    int tierInt = (tier is int) ? tier : int.tryParse(tier.toString()) ?? 0;
+    switch (tierInt) {
+      case 1:
+        return Colors.grey;
+      case 2:
+        return Colors.green;
+      case 3:
+        return Colors.blue;
+      case 4:
+        return Colors.purple;
+      case 5:
+        return Colors.yellow;
+      default:
+        return Colors.transparent;
     }
   }
 
@@ -133,6 +151,24 @@ class PlayerDetailScreen extends StatelessWidget {
     }
   }
 
+  // Fetch the summoner ID using puuid
+  Future<String> _fetchSummonerId() async {
+    final summonerIdUrl =
+        'https://sg2.api.riotgames.com/tft/summoner/v1/summoners/by-puuid/$puuid';
+
+    final response = await http.get(
+      Uri.parse(summonerIdUrl),
+      headers: {'X-Riot-Token': _apiKey},
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      return data['id'];
+    } else {
+      throw Exception('Failed to fetch summoner ID');
+    }
+  }
+
   // Fetch the last 10 matches using puuid
   Future<List<String>> _fetchMatchHistory() async {
     final matchHistoryUrl =
@@ -150,23 +186,6 @@ class PlayerDetailScreen extends StatelessWidget {
     }
   }
 
-  // Fetch details for a specific match
-  Future<Map<String, dynamic>> _fetchMatchDetails(String matchId) async {
-    final matchDetailsUrl =
-        'https://sea.api.riotgames.com/tft/match/v1/matches/$matchId';
-
-    final response = await http.get(
-      Uri.parse(matchDetailsUrl),
-      headers: {'X-Riot-Token': _apiKey},
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
-    } else {
-      return {};
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<void>(
@@ -178,7 +197,9 @@ class PlayerDetailScreen extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return Center(child: Text('Failed to load data'));
+          return Center(
+              child:
+                  Text('Failed to load data', style: AppStyles.errorTextStyle));
         } else {
           return Scaffold(
             appBar: AppBar(
@@ -192,7 +213,9 @@ class PlayerDetailScreen extends StatelessWidget {
                 } else if (rankSnapshot.hasError ||
                     rankSnapshot.data == null ||
                     rankSnapshot.data!.isEmpty) {
-                  return Center(child: Text('Failed to load rank data'));
+                  return Center(
+                      child: Text('Failed to load rank data',
+                          style: AppStyles.errorTextStyle));
                 } else {
                   final rankData = rankSnapshot.data!;
                   return ListView(
@@ -204,40 +227,36 @@ class PlayerDetailScreen extends StatelessWidget {
                             : rank['tier'];
                         final iconUrl = _getRankIconUrl(rankType, tier);
                         final rankDisplay = rankType == 'RANKED_TFT_TURBO'
-                            ? '${rankType}: ${rank['ratedTier']} - ${rank['ratedRating']} Rating'
-                            : '${rankType}: ${rank['tier']} ${rank['rank']} - ${rank['leaguePoints']} LP';
+                            ? '$rankType: ${rank['ratedTier']} - ${rank['ratedRating']} Rating'
+                            : '$rankType: ${rank['tier']} ${rank['rank']} - ${rank['leaguePoints']} LP';
 
                         return Card(
-                          margin: EdgeInsets.all(10),
+                          margin: AppStyles.cardMargin,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: AppStyles.cardPadding,
                             child: Row(
                               children: [
                                 Image.network(
                                   iconUrl,
-                                  width: 50,
-                                  height: 50,
+                                  width: AppStyles.iconSize,
+                                  height: AppStyles.iconSize,
                                   errorBuilder: (context, error, stackTrace) =>
-                                      Icon(Icons.image, size: 50),
+                                      Icon(Icons.image,
+                                          size: AppStyles.iconSize),
                                 ),
                                 SizedBox(width: 10),
                                 Expanded(
-                                  child: Text(
-                                    rankDisplay,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                                  child: Text(rankDisplay,
+                                      style: AppStyles.rankTextStyle),
                                 ),
                               ],
                             ),
                           ),
                         );
-                      }).toList(),
+                      }),
                       SizedBox(height: 20),
                       FutureBuilder<List<String>>(
                         future: _fetchMatchHistory(),
@@ -249,7 +268,8 @@ class PlayerDetailScreen extends StatelessWidget {
                               !matchSnapshot.hasData ||
                               matchSnapshot.data!.isEmpty) {
                             return Center(
-                                child: Text('Failed to load match history'));
+                                child: Text('Failed to load match history',
+                                    style: AppStyles.errorTextStyle));
                           } else {
                             final matchIds = matchSnapshot.data!;
                             return ListView.builder(
@@ -269,7 +289,8 @@ class PlayerDetailScreen extends StatelessWidget {
                                         matchDetailSnapshot.data == null) {
                                       return ListTile(
                                         title: Text(
-                                            'Failed to load match details'),
+                                            'Failed to load match details',
+                                            style: AppStyles.errorTextStyle),
                                       );
                                     } else {
                                       final matchData =
@@ -280,23 +301,20 @@ class PlayerDetailScreen extends StatelessWidget {
                                               participant['puuid'] == puuid);
 
                                       return Card(
-                                        margin: EdgeInsets.all(8),
+                                        margin: AppStyles.cardMargin,
                                         shape: RoundedRectangleBorder(
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
                                         child: Padding(
-                                          padding: const EdgeInsets.all(12.0),
+                                          padding: AppStyles.cardPadding,
                                           child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 'Ranked TFT Match ${index + 1}',
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
+                                                style: AppStyles.titleTextStyle,
                                               ),
                                               SizedBox(height: 8),
                                               Text(
@@ -304,12 +322,9 @@ class PlayerDetailScreen extends StatelessWidget {
                                               SizedBox(height: 8),
                                               Row(
                                                 children: [
-                                                  Text(
-                                                    'Traits:',
-                                                    style: TextStyle(
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
+                                                  Text('Traits:',
+                                                      style: AppStyles
+                                                          .rankTextStyle),
                                                   SizedBox(width: 8),
                                                   Wrap(
                                                     spacing: 4,
@@ -323,25 +338,25 @@ class PlayerDetailScreen extends StatelessWidget {
                                                               trait['name']);
                                                       return Image.network(
                                                         traitIconUrl,
-                                                        width: 24,
-                                                        height: 24,
+                                                        width: AppStyles
+                                                            .smallIconSize,
+                                                        height: AppStyles
+                                                            .smallIconSize,
                                                         errorBuilder: (context,
                                                                 error,
                                                                 stackTrace) =>
                                                             Icon(Icons.image,
-                                                                size: 24),
+                                                                size: AppStyles
+                                                                    .smallIconSize),
                                                       );
                                                     }).toList(),
                                                   ),
                                                 ],
                                               ),
                                               SizedBox(height: 8),
-                                              Text(
-                                                'Units:',
-                                                style: TextStyle(
-                                                    fontWeight:
-                                                        FontWeight.bold),
-                                              ),
+                                              Text('Units:',
+                                                  style:
+                                                      AppStyles.rankTextStyle),
                                               SizedBox(height: 8),
                                               Wrap(
                                                 spacing: 8,
@@ -351,24 +366,48 @@ class PlayerDetailScreen extends StatelessWidget {
                                                   final championIconUrl =
                                                       _getChampionIconUrl(
                                                           unit['character_id']);
+                                                  final borderColor =
+                                                      _getBorderColor(
+                                                          unit['tier']);
+
                                                   return Column(
                                                     children: [
-                                                      Image.network(
-                                                        championIconUrl,
-                                                        width: 36,
-                                                        height: 36,
-                                                        errorBuilder: (context,
-                                                                error,
-                                                                stackTrace) =>
-                                                            Icon(Icons.image,
-                                                                size: 36),
+                                                      Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          border: Border.all(
+                                                              color:
+                                                                  borderColor,
+                                                              width: AppStyles
+                                                                  .unitIconBorderWidth),
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
+                                                        ),
+                                                        child: ClipRRect(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
+                                                          child: Image.network(
+                                                            championIconUrl,
+                                                            width: AppStyles
+                                                                .unitIconSize,
+                                                            height: AppStyles
+                                                                .unitIconSize,
+                                                            errorBuilder: (context,
+                                                                    error,
+                                                                    stackTrace) =>
+                                                                Icon(
+                                                                    Icons.image,
+                                                                    size: AppStyles
+                                                                        .unitIconSize),
+                                                          ),
+                                                        ),
                                                       ),
                                                       SizedBox(height: 4),
-                                                      Text(
-                                                        unit['character_id'],
-                                                        style: TextStyle(
-                                                            fontSize: 12),
-                                                      ),
+                                                      Text(unit['character_id'],
+                                                          style: AppStyles
+                                                              .subtitleTextStyle),
                                                     ],
                                                   );
                                                 }).toList(),
