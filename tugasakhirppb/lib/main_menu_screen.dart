@@ -220,44 +220,68 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     return Column(
       children: [
         // Single Search Bar
-        TextField(
-          controller: _searchController,
-          decoration: InputDecoration(
-            labelText: 'Search GameName#TagLine',
-            border: OutlineInputBorder(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              labelText: 'Search GameName#TagLine',
+              border: OutlineInputBorder(),
+              suffixIcon: Icon(Icons.search),
+            ),
           ),
         ),
         SizedBox(height: 10),
 
-        // Search Results
+        // Search Results (show on top, with limited space)
         if (_searchResults.isNotEmpty)
-          Expanded(
+          Container(
+            height: 75, // Set a fixed height for the search results
             child: ListView.builder(
               itemCount: _searchResults.length,
               itemBuilder: (context, index) {
                 final result = _searchResults[index];
-                return ListTile(
-                  title: Text('${result['gameName']}#${result['tagLine']}'),
-                  onTap: () async {
-                    final ranks = await _fetchPlayerRanks(result['puuid']);
-                    if (!mounted) return;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PlayerDetailScreen(
-                          puuid: result['puuid'],
-                          gameName: result['gameName'],
-                          tagLine: result['tagLine'],
-                          ranks: ranks,
+                return Card(
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ListTile(
+                    title: Text('${result['gameName']}#${result['tagLine']}'),
+                    onTap: () async {
+                      final ranks = await _fetchPlayerRanks(result['puuid']);
+                      if (!mounted) return;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PlayerDetailScreen(
+                            puuid: result['puuid'],
+                            gameName: result['gameName'],
+                            tagLine: result['tagLine'],
+                            ranks: ranks,
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               },
             ),
           ),
-
+        // Leaderboard Title
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Text(
+            'Leaderboard',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        SizedBox(height: 10),
         // Leaderboard Section
         Expanded(
           child: _leaderboard.isEmpty
@@ -266,56 +290,40 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
                   itemCount: _leaderboard.length,
                   itemBuilder: (context, index) {
                     final player = _leaderboard[index];
-                    return ListTile(
-                      leading: CircleAvatar(child: Text('${index + 1}')),
-                      title: Text('${player['gameName']}#${player['tagLine']}'),
-                      subtitle: Text(
-                          'Rank: ${player['tier']} - LP: ${player['leaguePoints']}'),
-                      onTap: () async {
-                        final ranks =
-                            await _fetchPlayerRanks(player['summonerId']);
-                        if (!mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PlayerDetailScreen(
-                              puuid: player['puuid'],
-                              gameName: player['gameName'],
-                              tagLine: player['tagLine'],
-                              ranks: ranks,
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 5, horizontal: 20),
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ListTile(
+                        title:
+                            Text('${player['gameName']}#${player['tagLine']}'),
+                        subtitle:
+                            Text('Rank: Master ${player['leaguePoints']}'),
+                        onTap: () async {
+                          final ranks =
+                              await _fetchPlayerRanks(player['puuid']);
+                          if (!mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PlayerDetailScreen(
+                                puuid: player['puuid'],
+                                gameName: player['gameName'],
+                                tagLine: player['tagLine'],
+                                ranks: ranks,
+                              ),
                             ),
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     );
                   },
                 ),
         ),
       ],
-    );
-  }
-
-  Widget _buildLeaderboard() {
-    if (_leaderboard.isEmpty) {
-      return Expanded(child: Center(child: CircularProgressIndicator()));
-    }
-
-    return Expanded(
-      child: ListView.builder(
-        itemCount: _leaderboard.length,
-        itemBuilder: (context, index) {
-          final player = _leaderboard[index];
-
-          return ListTile(
-            title: Text(player['gameName'] ?? 'Unknown Player'),
-            subtitle: Text(
-                'Rank: ${player['rank']} - League Points: ${player['leaguePoints']}'),
-            onTap: () {
-              // Handle tap event for leaderboard item
-            },
-          );
-        },
-      ),
     );
   }
 
