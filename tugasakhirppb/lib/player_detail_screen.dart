@@ -16,7 +16,7 @@ class PlayerDetailScreen extends StatelessWidget {
     required List<Map<String, dynamic>> ranks,
   });
 
-  final String _apiKey = 'RGAPI-2556b860-05dc-4126-a9df-8438d6117f59';
+  final String _apiKey = 'RGAPI-a624b0e3-fe5b-4ffc-8ef4-9de1e4c4d36c';
 
   // Cache for trait and rank data
   static Map<String, String> _traitIconDataCache = {};
@@ -113,23 +113,15 @@ class PlayerDetailScreen extends StatelessWidget {
     return 'https://ddragon.leagueoflegends.com/cdn/14.23.1/img/tft-champion/$championId.png';
   }
 
-  // Get border color based on tier
-  Color _getBorderColor(dynamic tier) {
-    // Ensure the tier is treated as an integer
-    int tierInt = (tier is int) ? tier : int.tryParse(tier.toString()) ?? 0;
-    switch (tierInt) {
-      case 1:
-        return Colors.grey;
-      case 2:
-        return Colors.green;
-      case 3:
-        return Colors.blue;
-      case 4:
-        return Colors.purple;
-      case 5:
-        return Colors.yellow;
-      default:
-        return Colors.transparent;
+  String _getChampionIconUrl2(String characterName) {
+    // Membentuk URL gambar dengan format yang benar
+    final formattedName = characterName.toLowerCase();
+    if (formattedName == "tft13_sion") {
+      return 'https://raw.communitydragon.org/latest/game/assets/characters/tft13_sion/skins/base/images/tft13_sion_splash_tile_0_mobile.tft_set13.png';
+    } else if (formattedName == "tft13_twitch") {
+      return 'https://raw.communitydragon.org/latest/game/assets/characters/tft13_twitch/skins/base/images/tft13_twitch__mobile.tft_set13.png';
+    } else {
+      return 'https://raw.communitydragon.org/latest/game/assets/characters/$formattedName/skins/base/images/${formattedName}_mobile.tft_set13.png';
     }
   }
 
@@ -218,213 +210,238 @@ class PlayerDetailScreen extends StatelessWidget {
                           style: AppStyles.errorTextStyle));
                 } else {
                   final rankData = rankSnapshot.data!;
-                  return ListView(
-                    children: [
-                      ...rankData.map((rank) {
-                        final rankType = rank['queueType'];
-                        final tier = rankType == 'RANKED_TFT_TURBO'
-                            ? rank['ratedTier']
-                            : rank['tier'];
-                        final iconUrl = _getRankIconUrl(rankType, tier);
-                        final rankDisplay = rankType == 'RANKED_TFT_TURBO'
-                            ? '$rankType: ${rank['ratedTier']} - ${rank['ratedRating']} Rating'
-                            : '$rankType: ${rank['tier']} ${rank['rank']} - ${rank['leaguePoints']} LP';
+                  return SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        ...rankData.map((rank) {
+                          final rankType = rank['queueType'];
+                          final tier = rankType == 'RANKED_TFT_TURBO'
+                              ? rank['ratedTier']
+                              : rank['tier'];
+                          final iconUrl = _getRankIconUrl(rankType, tier);
+                          final rankDisplay = rankType == 'RANKED_TFT_TURBO'
+                              ? '$rankType: ${rank['ratedTier']} - ${rank['ratedRating']} Rating'
+                              : '$rankType: ${rank['tier']} ${rank['rank']} - ${rank['leaguePoints']} LP';
 
-                        return Card(
-                          margin: AppStyles.cardMargin,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Padding(
-                            padding: AppStyles.cardPadding,
-                            child: Row(
-                              children: [
-                                Image.network(
-                                  iconUrl,
-                                  width: AppStyles.iconSize,
-                                  height: AppStyles.iconSize,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Icon(Icons.image,
-                                          size: AppStyles.iconSize),
-                                ),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(rankDisplay,
-                                      style: AppStyles.rankTextStyle),
-                                ),
-                              ],
+                          return Card(
+                            margin: AppStyles.cardMargin,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          ),
-                        );
-                      }),
-                      SizedBox(height: 20),
-                      FutureBuilder<List<String>>(
-                        future: _fetchMatchHistory(),
-                        builder: (context, matchSnapshot) {
-                          if (matchSnapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return Center(child: CircularProgressIndicator());
-                          } else if (matchSnapshot.hasError ||
-                              !matchSnapshot.hasData ||
-                              matchSnapshot.data!.isEmpty) {
-                            return Center(
-                                child: Text('Failed to load match history',
-                                    style: AppStyles.errorTextStyle));
-                          } else {
-                            final matchIds = matchSnapshot.data!;
-                            return ListView.builder(
-                              shrinkWrap: true,
-                              physics: NeverScrollableScrollPhysics(),
-                              itemCount: matchIds.length,
-                              itemBuilder: (context, index) {
-                                final matchId = matchIds[index];
-                                return FutureBuilder<Map<String, dynamic>>(
-                                  future: _fetchMatchDetails(matchId),
-                                  builder: (context, matchDetailSnapshot) {
-                                    if (matchDetailSnapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return Center(
-                                          child: CircularProgressIndicator());
-                                    } else if (matchDetailSnapshot.hasError ||
-                                        matchDetailSnapshot.data == null) {
-                                      return ListTile(
-                                        title: Text(
-                                            'Failed to load match details',
-                                            style: AppStyles.errorTextStyle),
-                                      );
-                                    } else {
-                                      final matchData =
-                                          matchDetailSnapshot.data!;
-                                      final playerData = matchData['info']
-                                              ['participants']
-                                          .firstWhere((participant) =>
-                                              participant['puuid'] == puuid);
+                            child: Padding(
+                              padding: AppStyles.cardPadding,
+                              child: Row(
+                                children: [
+                                  Image.network(
+                                    iconUrl,
+                                    width: AppStyles.iconSize,
+                                    height: AppStyles.iconSize,
+                                    errorBuilder:
+                                        (context, error, stackTrace) => Icon(
+                                            Icons.image,
+                                            size: AppStyles.iconSize),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(rankDisplay,
+                                        style: AppStyles.rankTextStyle),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                        SizedBox(height: 20),
+                        FutureBuilder<List<String>>(
+                          future: _fetchMatchHistory(),
+                          builder: (context, matchSnapshot) {
+                            if (matchSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return Center(child: CircularProgressIndicator());
+                            } else if (matchSnapshot.hasError ||
+                                !matchSnapshot.hasData ||
+                                matchSnapshot.data!.isEmpty) {
+                              return Center(
+                                  child: Text('Failed to load match history',
+                                      style: AppStyles.errorTextStyle));
+                            } else {
+                              final matchIds = matchSnapshot.data!;
+                              return ListView.builder(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: matchIds.length,
+                                itemBuilder: (context, index) {
+                                  final matchId = matchIds[index];
+                                  return FutureBuilder<Map<String, dynamic>>(
+                                    future: _fetchMatchDetails(matchId),
+                                    builder: (context, matchDetailSnapshot) {
+                                      if (matchDetailSnapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return Center(
+                                            child: CircularProgressIndicator());
+                                      } else if (matchDetailSnapshot.hasError ||
+                                          matchDetailSnapshot.data == null) {
+                                        return ListTile(
+                                          title: Text(
+                                              'Failed to load match details',
+                                              style: AppStyles.errorTextStyle),
+                                        );
+                                      } else {
+                                        final matchData =
+                                            matchDetailSnapshot.data!;
+                                        final playerData = matchData['info']
+                                                ['participants']
+                                            .firstWhere((participant) =>
+                                                participant['puuid'] == puuid);
 
-                                      return Card(
-                                        margin: AppStyles.cardMargin,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        child: Padding(
-                                          padding: AppStyles.cardPadding,
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                'Ranked TFT Match ${index + 1}',
-                                                style: AppStyles.titleTextStyle,
-                                              ),
-                                              SizedBox(height: 8),
-                                              Text(
-                                                  'Placement: ${playerData['placement']}'),
-                                              SizedBox(height: 8),
-                                              Row(
-                                                children: [
-                                                  Text('Traits:',
-                                                      style: AppStyles
-                                                          .rankTextStyle),
-                                                  SizedBox(width: 8),
-                                                  Wrap(
-                                                    spacing: 4,
-                                                    runSpacing: 4,
-                                                    children:
-                                                        playerData['traits']
-                                                            .map<Widget>(
-                                                                (trait) {
-                                                      final traitIconUrl =
-                                                          _getTraitIconUrl(
-                                                              trait['name']);
-                                                      return Image.network(
-                                                        traitIconUrl,
-                                                        width: AppStyles
-                                                            .smallIconSize,
-                                                        height: AppStyles
-                                                            .smallIconSize,
-                                                        errorBuilder: (context,
-                                                                error,
-                                                                stackTrace) =>
-                                                            Icon(Icons.image,
-                                                                size: AppStyles
-                                                                    .smallIconSize),
-                                                      );
-                                                    }).toList(),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: 8),
-                                              Text('Units:',
+                                        return Card(
+                                          margin: AppStyles.cardMargin,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: Padding(
+                                            padding: AppStyles.cardPadding,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Ranked TFT Match ${index + 1}',
                                                   style:
-                                                      AppStyles.rankTextStyle),
-                                              SizedBox(height: 8),
-                                              Wrap(
-                                                spacing: 8,
-                                                runSpacing: 8,
-                                                children: playerData['units']
-                                                    .map<Widget>((unit) {
-                                                  final championIconUrl =
-                                                      _getChampionIconUrl(
-                                                          unit['character_id']);
-                                                  final borderColor =
-                                                      _getBorderColor(
-                                                          unit['tier']);
-
-                                                  return Column(
-                                                    children: [
-                                                      Container(
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          border: Border.all(
-                                                              color:
-                                                                  borderColor,
-                                                              width: AppStyles
-                                                                  .unitIconBorderWidth),
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(8),
-                                                        ),
-                                                        child: ClipRRect(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(8),
+                                                      AppStyles.titleTextStyle,
+                                                ),
+                                                SizedBox(height: 8),
+                                                Text(
+                                                    'Placement: ${playerData['placement']}'),
+                                                SizedBox(height: 8),
+                                                Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    Text('Traits:',
+                                                        style: AppStyles
+                                                            .rankTextStyle),
+                                                    SizedBox(height: 8),
+                                                    Wrap(
+                                                      spacing: 4,
+                                                      runSpacing: 4,
+                                                      children:
+                                                          playerData['traits']
+                                                              .map<Widget>(
+                                                                  (trait) {
+                                                        final traitIconUrl =
+                                                            _getTraitIconUrl(
+                                                                trait['name']);
+                                                        return Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.black
+                                                                .withOpacity(
+                                                                    0.6), // Darker background
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8), // Rounded corners
+                                                          ),
+                                                          padding: EdgeInsets.all(
+                                                              4), // Padding around the icon
                                                           child: Image.network(
-                                                            championIconUrl,
+                                                            traitIconUrl,
                                                             width: AppStyles
-                                                                .unitIconSize,
+                                                                .smallIconSize,
                                                             height: AppStyles
-                                                                .unitIconSize,
+                                                                .smallIconSize,
                                                             errorBuilder: (context,
                                                                     error,
                                                                     stackTrace) =>
                                                                 Icon(
                                                                     Icons.image,
                                                                     size: AppStyles
-                                                                        .unitIconSize),
+                                                                        .smallIconSize),
+                                                          ),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 8),
+                                                Text('Units:',
+                                                    style: AppStyles
+                                                        .rankTextStyle),
+                                                SizedBox(height: 8),
+                                                Wrap(
+                                                  spacing: 8,
+                                                  runSpacing: 8,
+                                                  children: playerData['units']
+                                                      .map<Widget>((unit) {
+                                                    final championIconUrl =
+                                                        _getChampionIconUrl2(
+                                                            unit[
+                                                                'character_id']);
+
+                                                    return Column(
+                                                      children: [
+                                                        Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            border: Border.all(
+                                                                width: AppStyles
+                                                                    .unitIconBorderWidth),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
+                                                          child: ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                            child:
+                                                                Image.network(
+                                                              championIconUrl,
+                                                              width: AppStyles
+                                                                  .unitIconSize,
+                                                              height: AppStyles
+                                                                  .unitIconSize,
+                                                              errorBuilder: (context,
+                                                                      error,
+                                                                      stackTrace) =>
+                                                                  Icon(
+                                                                      Icons
+                                                                          .image,
+                                                                      size: AppStyles
+                                                                          .unitIconSize),
+                                                            ),
                                                           ),
                                                         ),
-                                                      ),
-                                                      SizedBox(height: 4),
-                                                      Text(unit['character_id'],
+                                                        SizedBox(height: 4),
+                                                        Text(
+                                                          unit['character_id']
+                                                              .replaceFirst(
+                                                                  'TFT13_', ''),
                                                           style: AppStyles
-                                                              .subtitleTextStyle),
-                                                    ],
-                                                  );
-                                                }).toList(),
-                                              ),
-                                            ],
+                                                              .subtitleTextStyle,
+                                                        ),
+                                                      ],
+                                                    );
+                                                  }).toList(),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                );
-                              },
-                            );
-                          }
-                        },
-                      ),
-                    ],
+                                        );
+                                      }
+                                    },
+                                  );
+                                },
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
                   );
                 }
               },

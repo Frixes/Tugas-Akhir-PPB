@@ -41,7 +41,10 @@ class ChampionDetailScreen extends StatelessWidget {
     }
 
     // Hapus markup seperti <magicDamage>, <scaleHealth>, <TFTKeyword>
-    description = description.replaceAll(RegExp(r'<[^>]+>'), '');
+    description = description.replaceAll(RegExp(r'<[^>]+>'), ' ');
+    description = description.replaceAll(RegExp('&nbsp;'), ' ');
+    description = description.replaceAll(RegExp('(%i:scaleAP%)'), ' ');
+    description = description.replaceAll(RegExp('(%i:scaleAD%)'), ' ');
 
     // Debugging log untuk output akhir deskripsi
     print("Final ability description: $description");

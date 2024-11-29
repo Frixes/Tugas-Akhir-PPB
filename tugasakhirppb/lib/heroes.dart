@@ -62,7 +62,11 @@ class _HeroesScreenState extends State<HeroesScreen> {
   String _getChampionIconUrl(String characterName) {
     // Membentuk URL gambar dengan format yang benar
     final formattedName = characterName.toLowerCase();
-    return 'https://raw.communitydragon.org/latest/game/assets/characters/$formattedName/skins/base/images/${formattedName}_mobile.tft_set13.png';
+    if (formattedName == "tft13_twitch") {
+      return 'https://raw.communitydragon.org/latest/game/assets/characters/$formattedName/skins/base/images/${formattedName}__mobile.tft_set13.png';
+    } else {
+      return 'https://raw.communitydragon.org/latest/game/assets/characters/$formattedName/skins/base/images/${formattedName}_mobile.tft_set13.png';
+    }
   }
 
   @override

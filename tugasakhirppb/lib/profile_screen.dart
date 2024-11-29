@@ -23,7 +23,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _rankData;
   String? _rankIconUrl; // Variable to store rank icon URL
 
-  final String _apiKey = 'RGAPI-2556b860-05dc-4126-a9df-8438d6117f59';
+  final String _apiKey = 'RGAPI-a624b0e3-fe5b-4ffc-8ef4-9de1e4c4d36c';
   static Map<String, Map<String, String>> _rankIconDataCache = {};
 
   @override
@@ -249,7 +249,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color.fromARGB(255, 222, 218, 228),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -336,7 +336,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: ElevatedButton.styleFrom(
                         padding:
                             EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                        backgroundColor: Colors.deepPurple,
+                        backgroundColor:
+                            const Color.fromARGB(255, 209, 194, 235),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
